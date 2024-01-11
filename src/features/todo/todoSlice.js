@@ -26,7 +26,6 @@ export const todoSlice = createSlice({
     // The text of the new todo is taken from the payload property of the action.
 
     addTodo: (state, action) => {
-
       const { text, date, isPriority } = action.payload;
 
       const todo = {
@@ -54,38 +53,51 @@ export const todoSlice = createSlice({
       state.completedTodos = state.completedTodos.filter(
         (todo) => todo.id !== action.payload
       ); //Update the completedTodos array using the same approach.
+
+      // Also remove the todo from the priorityLists if it exists there
+      state.priorityLists = state.priorityLists.filter(
+        (todo) => todo.id !== action.payload
+      );
     },
 
     editTodo: (state, action) => {
+      const { id, text } = action.payload;
+
       // Find the index of the todo with the specified id
-      const index = state.todos.findIndex(
-        (todo) => todo.id === action.payload.id
-      );
+      const index = state.todos.findIndex((todo) => todo.id === id);
 
       // If the todo with the given id is found (index !== -1), update its text property
       if (index !== -1) {
-        state.todos[index].text = action.payload.text;
+        state.todos[index].text = text;
+
+        // If the todo is marked as priority, update the text property in priorityLists as well
+        if (state.todos[index].priority) {
+          const priorityIndex = state.priorityLists.findIndex(
+            (todo) => todo.id === id
+          );
+          if (priorityIndex !== -1) {
+            state.priorityLists[priorityIndex].text = text;
+          }
+        }
       }
     },
 
     markAsComplete: (state, action) => {
-  // Extracting the 'id' property from the payload of the action
+      // Extracting the 'id' property from the payload of the action
       const { id } = action.payload;
-  // Finding the index of the todo with the specified id in the 'todos' array
+      // Finding the index of the todo with the specified id in the 'todos' array
       const todoIndex = state.todos.findIndex((todo) => todo.id === id);
 
       if (todoIndex !== -1) {
         // Mark the todo as complete
         state.todos[todoIndex].completed = true;
 
-
-    // Move the completed todo to the completedTodos array
-    // The splice method modifies the original array, removing or replacing elements.
+        // Move the completed todo to the completedTodos array
+        // The splice method modifies the original array, removing or replacing elements.
         const completedTodo = state.todos.splice(todoIndex, 1)[0];
         state.completedTodos.push(completedTodo);
 
-
-    // if the priority task is complete then move it to the completed task
+        // if the priority task is complete then move it to the completed task
         if (completedTodo.priority) {
           const priorityIndex = state.priorityLists.findIndex(
             (todo) => todo.id === id
@@ -108,6 +120,7 @@ export const todoSlice = createSlice({
         state.priorityLists.push(priorityTodo);
       }
     },
+
     // PROJECT REDUCERS
     addProject: (state, action) => {
       state.projects.push(action.payload);
